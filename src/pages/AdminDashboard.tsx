@@ -507,6 +507,13 @@ export default function AdminDashboard() {
                     </div>
                     <div className="flex items-center gap-2">
                       <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => navigate(`/admin/course/${course.id}/lessons`)}
+                      >
+                        Manage Lessons
+                      </Button>
+                      <Button 
                         variant="ghost" 
                         size="sm"
                         onClick={() => handleTogglePublish(course.id, course.is_published)}
