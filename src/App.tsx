@@ -8,7 +8,11 @@ import Landing from "./pages/Landing";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import Courses from "./pages/Courses";
+import CourseDetail from "./pages/CourseDetail";
+import LessonView from "./pages/LessonView";
+import QuizView from "./pages/QuizView";
 import AdminDashboard from "./pages/AdminDashboard";
+import AdminLessons from "./pages/AdminLessons";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -25,7 +29,11 @@ const App = () => (
             <Route path="/auth" element={<Auth />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/courses" element={<Courses />} />
+            <Route path="/course/:courseId" element={<CourseDetail />} />
+            <Route path="/lesson/:lessonId" element={<LessonView />} />
+            <Route path="/quiz/:quizId" element={<QuizView />} />
             <Route path="/admin" element={<AdminDashboard />} />
+            <Route path="/admin/course/:courseId/lessons" element={<AdminLessons />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
