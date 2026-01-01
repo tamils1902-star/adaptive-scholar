@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/lib/auth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
-import { Brain, BookOpen, Sparkles, ArrowRight } from 'lucide-react';
+import { Brain, BookOpen, Sparkles, ArrowRight, ArrowLeft } from 'lucide-react';
 import { z } from 'zod';
 
 const loginSchema = z.object({
@@ -21,23 +21,42 @@ const signUpSchema = z.object({
   password: z.string().min(6, 'Password must be at least 6 characters'),
 });
 
+const resetSchema = z.object({
+  email: z.string().email('Please enter a valid email address'),
+});
+
+const newPasswordSchema = z.object({
+  password: z.string().min(6, 'Password must be at least 6 characters'),
+  confirmPassword: z.string().min(6, 'Password must be at least 6 characters'),
+}).refine((data) => data.password === data.confirmPassword, {
+  message: "Passwords don't match",
+  path: ["confirmPassword"],
+});
+
 export default function Auth() {
+  const [searchParams] = useSearchParams();
+  const isPasswordReset = searchParams.get('reset') === 'true';
+  
   const [isLoading, setIsLoading] = useState(false);
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
   const [signUpName, setSignUpName] = useState('');
   const [signUpEmail, setSignUpEmail] = useState('');
   const [signUpPassword, setSignUpPassword] = useState('');
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [resetEmail, setResetEmail] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   
-  const { signIn, signUp, user } = useAuth();
+  const { signIn, signUp, user, resetPassword, updatePassword } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
   useEffect(() => {
-    if (user) {
+    if (user && !isPasswordReset) {
       navigate('/dashboard');
     }
-  }, [user, navigate]);
+  }, [user, navigate, isPasswordReset]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -60,7 +79,7 @@ export default function Auth() {
       toast({
         title: 'Login Failed',
         description: error.message === 'Invalid login credentials' 
-          ? 'Invalid email or password. Please try again.'
+          ? 'Invalid email or password. If you are new, please Sign Up first.'
           : error.message,
         variant: 'destructive',
       });
@@ -111,6 +130,71 @@ export default function Auth() {
         description: 'Welcome to the Adaptive Learning System.',
       });
       navigate('/dashboard');
+    }
+  };
+
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    const validation = resetSchema.safeParse({ email: resetEmail });
+    if (!validation.success) {
+      toast({
+        title: 'Validation Error',
+        description: validation.error.errors[0].message,
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setIsLoading(true);
+    const { error } = await resetPassword(resetEmail);
+    setIsLoading(false);
+
+    if (error) {
+      toast({
+        title: 'Error',
+        description: error.message,
+        variant: 'destructive',
+      });
+    } else {
+      toast({
+        title: 'Email Sent!',
+        description: 'Check your email for the password reset link.',
+      });
+      setShowForgotPassword(false);
+      setResetEmail('');
+    }
+  };
+
+  const handleUpdatePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    const validation = newPasswordSchema.safeParse({ password: newPassword, confirmPassword });
+    if (!validation.success) {
+      toast({
+        title: 'Validation Error',
+        description: validation.error.errors[0].message,
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setIsLoading(true);
+    const { error } = await updatePassword(newPassword);
+    setIsLoading(false);
+
+    if (error) {
+      toast({
+        title: 'Error',
+        description: error.message,
+        variant: 'destructive',
+      });
+    } else {
+      toast({
+        title: 'Password Updated!',
+        description: 'You can now login with your new password.',
+      });
+      navigate('/auth');
     }
   };
 
@@ -173,91 +257,183 @@ export default function Auth() {
           </div>
           
           <Card className="border-0 shadow-xl">
-            <CardHeader className="text-center pb-4">
-              <CardTitle className="text-2xl font-display">Welcome</CardTitle>
-              <CardDescription>Sign in to continue your learning journey</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Tabs defaultValue="login" className="w-full">
-                <TabsList className="grid w-full grid-cols-2 mb-6">
-                  <TabsTrigger value="login">Login</TabsTrigger>
-                  <TabsTrigger value="signup">Sign Up</TabsTrigger>
-                </TabsList>
-                
-                <TabsContent value="login">
-                  <form onSubmit={handleLogin} className="space-y-4">
+            {/* Password Reset Mode */}
+            {isPasswordReset ? (
+              <>
+                <CardHeader className="text-center pb-4">
+                  <CardTitle className="text-2xl font-display">Set New Password</CardTitle>
+                  <CardDescription>Enter your new password below</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <form onSubmit={handleUpdatePassword} className="space-y-4">
                     <div className="space-y-2">
-                      <Label htmlFor="login-email">Email</Label>
+                      <Label htmlFor="new-password">New Password</Label>
                       <Input
-                        id="login-email"
-                        type="email"
-                        placeholder="you@example.com"
-                        value={loginEmail}
-                        onChange={(e) => setLoginEmail(e.target.value)}
+                        id="new-password"
+                        type="password"
+                        placeholder="••••••••"
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
                         required
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="login-password">Password</Label>
+                      <Label htmlFor="confirm-password">Confirm Password</Label>
                       <Input
-                        id="login-password"
+                        id="confirm-password"
                         type="password"
                         placeholder="••••••••"
-                        value={loginPassword}
-                        onChange={(e) => setLoginPassword(e.target.value)}
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
                         required
                       />
                     </div>
                     <Button type="submit" className="w-full" variant="gradient" size="lg" disabled={isLoading}>
-                      {isLoading ? 'Signing in...' : 'Sign In'}
+                      {isLoading ? 'Updating...' : 'Update Password'}
                       <ArrowRight className="w-4 h-4 ml-1" />
                     </Button>
                   </form>
-                </TabsContent>
-                
-                <TabsContent value="signup">
-                  <form onSubmit={handleSignUp} className="space-y-4">
+                </CardContent>
+              </>
+            ) : showForgotPassword ? (
+              <>
+                <CardHeader className="text-center pb-4">
+                  <CardTitle className="text-2xl font-display">Reset Password</CardTitle>
+                  <CardDescription>Enter your email to receive a reset link</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <form onSubmit={handleForgotPassword} className="space-y-4">
                     <div className="space-y-2">
-                      <Label htmlFor="signup-name">Full Name</Label>
+                      <Label htmlFor="reset-email">Email</Label>
                       <Input
-                        id="signup-name"
-                        type="text"
-                        placeholder="John Doe"
-                        value={signUpName}
-                        onChange={(e) => setSignUpName(e.target.value)}
-                        required
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="signup-email">Email</Label>
-                      <Input
-                        id="signup-email"
+                        id="reset-email"
                         type="email"
                         placeholder="you@example.com"
-                        value={signUpEmail}
-                        onChange={(e) => setSignUpEmail(e.target.value)}
-                        required
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="signup-password">Password</Label>
-                      <Input
-                        id="signup-password"
-                        type="password"
-                        placeholder="••••••••"
-                        value={signUpPassword}
-                        onChange={(e) => setSignUpPassword(e.target.value)}
+                        value={resetEmail}
+                        onChange={(e) => setResetEmail(e.target.value)}
                         required
                       />
                     </div>
                     <Button type="submit" className="w-full" variant="gradient" size="lg" disabled={isLoading}>
-                      {isLoading ? 'Creating account...' : 'Create Account'}
+                      {isLoading ? 'Sending...' : 'Send Reset Link'}
                       <ArrowRight className="w-4 h-4 ml-1" />
                     </Button>
+                    <Button 
+                      type="button" 
+                      variant="ghost" 
+                      className="w-full" 
+                      onClick={() => setShowForgotPassword(false)}
+                    >
+                      <ArrowLeft className="w-4 h-4 mr-1" />
+                      Back to Login
+                    </Button>
                   </form>
-                </TabsContent>
-              </Tabs>
-            </CardContent>
+                </CardContent>
+              </>
+            ) : (
+              <>
+                <CardHeader className="text-center pb-4">
+                  <CardTitle className="text-2xl font-display">Welcome</CardTitle>
+                  <CardDescription>Sign in to continue your learning journey</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Tabs defaultValue="login" className="w-full">
+                    <TabsList className="grid w-full grid-cols-2 mb-6">
+                      <TabsTrigger value="login">Login</TabsTrigger>
+                      <TabsTrigger value="signup">Sign Up</TabsTrigger>
+                    </TabsList>
+                    
+                    <TabsContent value="login">
+                      <form onSubmit={handleLogin} className="space-y-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="login-email">Email</Label>
+                          <Input
+                            id="login-email"
+                            type="email"
+                            placeholder="you@example.com"
+                            value={loginEmail}
+                            onChange={(e) => setLoginEmail(e.target.value)}
+                            required
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <Label htmlFor="login-password">Password</Label>
+                            <button 
+                              type="button"
+                              onClick={() => setShowForgotPassword(true)}
+                              className="text-sm text-primary hover:underline"
+                            >
+                              Forgot password?
+                            </button>
+                          </div>
+                          <Input
+                            id="login-password"
+                            type="password"
+                            placeholder="••••••••"
+                            value={loginPassword}
+                            onChange={(e) => setLoginPassword(e.target.value)}
+                            required
+                          />
+                        </div>
+                        <Button type="submit" className="w-full" variant="gradient" size="lg" disabled={isLoading}>
+                          {isLoading ? 'Signing in...' : 'Sign In'}
+                          <ArrowRight className="w-4 h-4 ml-1" />
+                        </Button>
+                        <p className="text-center text-sm text-muted-foreground">
+                          New here? Switch to the <span className="font-medium text-primary">Sign Up</span> tab to create an account.
+                        </p>
+                      </form>
+                    </TabsContent>
+                    
+                    <TabsContent value="signup">
+                      <form onSubmit={handleSignUp} className="space-y-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="signup-name">Full Name</Label>
+                          <Input
+                            id="signup-name"
+                            type="text"
+                            placeholder="John Doe"
+                            value={signUpName}
+                            onChange={(e) => setSignUpName(e.target.value)}
+                            required
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="signup-email">Email</Label>
+                          <Input
+                            id="signup-email"
+                            type="email"
+                            placeholder="you@example.com"
+                            value={signUpEmail}
+                            onChange={(e) => setSignUpEmail(e.target.value)}
+                            required
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="signup-password">Password</Label>
+                          <Input
+                            id="signup-password"
+                            type="password"
+                            placeholder="••••••••"
+                            value={signUpPassword}
+                            onChange={(e) => setSignUpPassword(e.target.value)}
+                            required
+                          />
+                        </div>
+                        <Button type="submit" className="w-full" variant="gradient" size="lg" disabled={isLoading}>
+                          {isLoading ? 'Creating account...' : 'Create Account'}
+                          <ArrowRight className="w-4 h-4 ml-1" />
+                        </Button>
+                        <p className="text-center text-sm text-muted-foreground">
+                          For admin access, sign up with: <span className="font-medium">tamils1902@gmail.com</span>
+                        </p>
+                      </form>
+                    </TabsContent>
+                  </Tabs>
+                </CardContent>
+              </>
+            )}
           </Card>
         </div>
       </div>
