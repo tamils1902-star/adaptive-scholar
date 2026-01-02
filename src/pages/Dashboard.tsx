@@ -53,7 +53,7 @@ export default function Dashboard() {
   });
   const [recommendations, setRecommendations] = useState<any[]>([]);
   const [profileName, setProfileName] = useState('');
-
+  const [lastLessonId, setLastLessonId] = useState<string | null>(null);
   useEffect(() => {
     if (!loading && !user) {
       navigate('/auth');
@@ -157,6 +157,40 @@ export default function Dashboard() {
     if (recs) {
       setRecommendations(recs);
     }
+
+    // Fetch last lesson progress to get continue lesson
+    const { data: lastProgress } = await supabase
+      .from('lesson_progress')
+      .select('lesson_id, completed_at')
+      .eq('user_id', user.id)
+      .order('completed_at', { ascending: false })
+      .limit(1);
+
+    if (lastProgress && lastProgress.length > 0) {
+      // Get the next incomplete lesson or the last one
+      const { data: lastLesson } = await supabase
+        .from('lessons')
+        .select('id, course_id, order_index')
+        .eq('id', lastProgress[0].lesson_id)
+        .maybeSingle();
+
+      if (lastLesson) {
+        // Check if there's a next lesson
+        const { data: nextLesson } = await supabase
+          .from('lessons')
+          .select('id')
+          .eq('course_id', lastLesson.course_id)
+          .gt('order_index', lastLesson.order_index)
+          .order('order_index', { ascending: true })
+          .limit(1);
+
+        if (nextLesson && nextLesson.length > 0) {
+          setLastLessonId(nextLesson[0].id);
+        } else {
+          setLastLessonId(lastProgress[0].lesson_id);
+        }
+      }
+    }
   };
 
   const handleSignOut = async () => {
@@ -206,7 +240,10 @@ export default function Dashboard() {
                 Admin Panel
               </Button>
             )}
-            <div className="flex items-center gap-2">
+            <div 
+              className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity"
+              onClick={() => navigate('/profile')}
+            >
               <div className="w-8 h-8 rounded-full gradient-accent flex items-center justify-center">
                 <span className="text-sm font-semibold text-accent-foreground">
                   {profileName.charAt(0).toUpperCase()}
@@ -414,7 +451,12 @@ export default function Dashboard() {
                   <BookOpen className="w-4 h-4 mr-2" />
                   Browse Courses
                 </Button>
-                <Button variant="outline" className="w-full justify-start">
+                <Button 
+                  variant="outline" 
+                  className="w-full justify-start"
+                  onClick={() => lastLessonId && navigate(`/lesson/${lastLessonId}`)}
+                  disabled={!lastLessonId}
+                >
                   <Clock className="w-4 h-4 mr-2" />
                   Continue Last Lesson
                 </Button>

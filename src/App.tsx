@@ -13,6 +13,8 @@ import LessonView from "./pages/LessonView";
 import QuizView from "./pages/QuizView";
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminLessons from "./pages/AdminLessons";
+import AdminAnalytics from "./pages/AdminAnalytics";
+import ProfileSettings from "./pages/ProfileSettings";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -34,6 +36,8 @@ const App = () => (
             <Route path="/quiz/:quizId" element={<QuizView />} />
             <Route path="/admin" element={<AdminDashboard />} />
             <Route path="/admin/course/:courseId/lessons" element={<AdminLessons />} />
+            <Route path="/admin/analytics" element={<AdminAnalytics />} />
+            <Route path="/profile" element={<ProfileSettings />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
