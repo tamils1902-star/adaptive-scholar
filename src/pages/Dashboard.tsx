@@ -17,7 +17,12 @@ import {
   Sparkles,
   Target,
   Zap,
-  GraduationCap
+  GraduationCap,
+  Award,
+  Bot,
+  BarChart3,
+  FileText,
+  Shield
 } from 'lucide-react';
 
 interface CourseWithProgress {
@@ -459,6 +464,22 @@ export default function Dashboard() {
                 >
                   <Clock className="w-4 h-4 mr-2" />
                   Continue Last Lesson
+                </Button>
+                <Button variant="outline" className="w-full justify-start" onClick={() => navigate('/ai-tutor')}>
+                  <Bot className="w-4 h-4 mr-2" />
+                  AI Tutor Chat
+                </Button>
+                <Button variant="outline" className="w-full justify-start" onClick={() => navigate('/certificates')}>
+                  <Award className="w-4 h-4 mr-2" />
+                  My Certificates
+                </Button>
+                <Button variant="outline" className="w-full justify-start" onClick={() => navigate('/performance')}>
+                  <BarChart3 className="w-4 h-4 mr-2" />
+                  Performance Tracking
+                </Button>
+                <Button variant="outline" className="w-full justify-start" onClick={() => navigate('/analytics')}>
+                  <FileText className="w-4 h-4 mr-2" />
+                  Learning Analytics
                 </Button>
               </CardContent>
             </Card>

@@ -15,6 +15,11 @@ import AdminDashboard from "./pages/AdminDashboard";
 import AdminLessons from "./pages/AdminLessons";
 import AdminAnalytics from "./pages/AdminAnalytics";
 import ProfileSettings from "./pages/ProfileSettings";
+import Certificates from "./pages/Certificates";
+import AIChatbot from "./pages/AIChatbot";
+import PerformanceTracking from "./pages/PerformanceTracking";
+import LearningAnalytics from "./pages/LearningAnalytics";
+import SecureExam from "./pages/SecureExam";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -34,10 +39,15 @@ const App = () => (
             <Route path="/course/:courseId" element={<CourseDetail />} />
             <Route path="/lesson/:lessonId" element={<LessonView />} />
             <Route path="/quiz/:quizId" element={<QuizView />} />
+            <Route path="/secure-exam/:quizId" element={<SecureExam />} />
             <Route path="/admin" element={<AdminDashboard />} />
             <Route path="/admin/course/:courseId/lessons" element={<AdminLessons />} />
             <Route path="/admin/analytics" element={<AdminAnalytics />} />
             <Route path="/profile" element={<ProfileSettings />} />
+            <Route path="/certificates" element={<Certificates />} />
+            <Route path="/ai-tutor" element={<AIChatbot />} />
+            <Route path="/performance" element={<PerformanceTracking />} />
+            <Route path="/analytics" element={<LearningAnalytics />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
