@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      certificates: {
+        Row: {
+          certificate_number: string
+          certificate_url: string | null
+          completion_percentage: number
+          course_id: string
+          final_score: number | null
+          id: string
+          issued_at: string
+          user_id: string
+        }
+        Insert: {
+          certificate_number: string
+          certificate_url?: string | null
+          completion_percentage?: number
+          course_id: string
+          final_score?: number | null
+          id?: string
+          issued_at?: string
+          user_id: string
+        }
+        Update: {
+          certificate_number?: string
+          certificate_url?: string | null
+          completion_percentage?: number
+          course_id?: string
+          final_score?: number | null
+          id?: string
+          issued_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       courses: {
         Row: {
           category: string | null
@@ -87,6 +120,45 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      exam_sessions: {
+        Row: {
+          ended_at: string | null
+          flag_reason: string | null
+          fullscreen_exits: number | null
+          id: string
+          is_active: boolean
+          is_flagged: boolean | null
+          quiz_id: string
+          started_at: string
+          tab_switches: number | null
+          user_id: string
+        }
+        Insert: {
+          ended_at?: string | null
+          flag_reason?: string | null
+          fullscreen_exits?: number | null
+          id?: string
+          is_active?: boolean
+          is_flagged?: boolean | null
+          quiz_id: string
+          started_at?: string
+          tab_switches?: number | null
+          user_id: string
+        }
+        Update: {
+          ended_at?: string | null
+          flag_reason?: string | null
+          fullscreen_exits?: number | null
+          id?: string
+          is_active?: boolean
+          is_flagged?: boolean | null
+          quiz_id?: string
+          started_at?: string
+          tab_switches?: number | null
+          user_id?: string
+        }
+        Relationships: []
       }
       lesson_progress: {
         Row: {
@@ -169,6 +241,30 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      performance_logs: {
+        Row: {
+          activity_data: Json | null
+          activity_type: string
+          created_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          activity_data?: Json | null
+          activity_type: string
+          created_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          activity_data?: Json | null
+          activity_type?: string
+          created_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       profiles: {
         Row: {
