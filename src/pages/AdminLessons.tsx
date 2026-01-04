@@ -17,7 +17,8 @@ import {
   Trash2,
   Edit,
   GripVertical,
-  BookOpen
+  BookOpen,
+  Youtube
 } from 'lucide-react';
 import {
   Dialog,
@@ -40,6 +41,7 @@ interface Lesson {
   order_index: number;
   duration_minutes: number | null;
   difficulty: string;
+  video_url: string | null;
 }
 
 export default function AdminLessons() {
@@ -58,6 +60,7 @@ export default function AdminLessons() {
   const [content, setContent] = useState('');
   const [difficulty, setDifficulty] = useState('beginner');
   const [duration, setDuration] = useState('10');
+  const [videoUrl, setVideoUrl] = useState('');
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
@@ -112,6 +115,7 @@ export default function AdminLessons() {
     setContent('');
     setDifficulty('beginner');
     setDuration('10');
+    setVideoUrl('');
     setEditingLesson(null);
   };
 
@@ -121,6 +125,7 @@ export default function AdminLessons() {
     setContent(lesson.content || '');
     setDifficulty(lesson.difficulty);
     setDuration(String(lesson.duration_minutes || 10));
+    setVideoUrl(lesson.video_url || '');
     setIsDialogOpen(true);
   };
 
@@ -144,6 +149,7 @@ export default function AdminLessons() {
           content,
           difficulty: difficulty as 'beginner' | 'intermediate' | 'advanced',
           duration_minutes: parseInt(duration),
+          video_url: videoUrl || null,
         })
         .eq('id', editingLesson.id);
 
@@ -165,6 +171,7 @@ export default function AdminLessons() {
           difficulty: difficulty as 'beginner' | 'intermediate' | 'advanced',
           duration_minutes: parseInt(duration),
           order_index: newOrderIndex,
+          video_url: videoUrl || null,
         });
 
       if (error) {
@@ -288,6 +295,19 @@ export default function AdminLessons() {
                         rows={10}
                       />
                     </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="videoUrl">YouTube Video URL</Label>
+                      <div className="flex items-center gap-2">
+                        <Youtube className="w-5 h-5 text-destructive" />
+                        <Input
+                          id="videoUrl"
+                          value={videoUrl}
+                          onChange={(e) => setVideoUrl(e.target.value)}
+                          placeholder="https://www.youtube.com/watch?v=..."
+                        />
+                      </div>
+                      <p className="text-xs text-muted-foreground">Paste a YouTube video URL for this lesson</p>
+                    </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label htmlFor="difficulty">Difficulty</Label>
@@ -347,9 +367,15 @@ export default function AdminLessons() {
                             {lesson.difficulty}
                           </Badge>
                         </div>
-                        <p className="text-sm text-muted-foreground">
-                          {lesson.duration_minutes || 10} minutes
-                        </p>
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <span>{lesson.duration_minutes || 10} minutes</span>
+                          {lesson.video_url && (
+                            <span className="flex items-center gap-1 text-destructive">
+                              <Youtube className="w-3 h-3" />
+                              Video
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
