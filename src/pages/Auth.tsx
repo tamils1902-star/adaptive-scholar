@@ -48,15 +48,20 @@ export default function Auth() {
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   
-  const { signIn, signUp, user, resetPassword, updatePassword } = useAuth();
+  const { signIn, signUp, user, role, resetPassword, updatePassword } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
   useEffect(() => {
     if (user && !isPasswordReset) {
-      navigate('/dashboard');
+      // Redirect admin users to admin page, students to dashboard
+      if (role === 'admin') {
+        navigate('/admin');
+      } else if (role) {
+        navigate('/dashboard');
+      }
     }
-  }, [user, navigate, isPasswordReset]);
+  }, [user, role, navigate, isPasswordReset]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -88,7 +93,7 @@ export default function Auth() {
         title: 'Welcome back!',
         description: 'Successfully signed in.',
       });
-      navigate('/dashboard');
+      // Navigation will be handled by useEffect when role is fetched
     }
   };
 
@@ -426,7 +431,7 @@ export default function Auth() {
                           <ArrowRight className="w-4 h-4 ml-1" />
                         </Button>
                         <p className="text-center text-sm text-muted-foreground">
-                          For admin access, sign up with: <span className="font-medium">tamils1902@gmail.com</span>
+                          For admin access, sign up with: <span className="font-medium">tamilselvanit166@gmail.com</span>
                         </p>
                       </form>
                     </TabsContent>
