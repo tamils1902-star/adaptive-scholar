@@ -230,9 +230,19 @@ export default function Courses() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredCourses.map((course) => (
               <Card key={course.id} className="border-0 shadow-lg hover:shadow-xl transition-all group overflow-hidden">
-                <div className="h-40 bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center">
-                  <BookOpen className="w-16 h-16 text-primary/40 group-hover:scale-110 transition-transform" />
-                </div>
+                {course.thumbnail_url ? (
+                  <div className="h-40 overflow-hidden">
+                    <img 
+                      src={course.thumbnail_url} 
+                      alt={course.title} 
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                    />
+                  </div>
+                ) : (
+                  <div className="h-40 bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center">
+                    <BookOpen className="w-16 h-16 text-primary/40 group-hover:scale-110 transition-transform" />
+                  </div>
+                )}
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between gap-2">
                     <CardTitle className="text-lg line-clamp-1">{course.title}</CardTitle>

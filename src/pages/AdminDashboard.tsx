@@ -25,7 +25,10 @@ import {
   GraduationCap,
   User,
   Mail,
-  Calendar
+  Calendar,
+  Image,
+  Eye,
+  UserX
 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -54,6 +57,7 @@ interface Course {
   category: string | null;
   is_published: boolean;
   created_at: string;
+  thumbnail_url: string | null;
 }
 
 interface Student {
@@ -62,6 +66,8 @@ interface Student {
   full_name: string | null;
   created_at: string;
   enrollments_count: number;
+  total_points: number | null;
+  current_level: string | null;
 }
 
 interface Enrollment {
@@ -98,12 +104,15 @@ export default function AdminDashboard() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingCourse, setEditingCourse] = useState<Course | null>(null);
   const [activeTab, setActiveTab] = useState<'courses' | 'students' | 'enrollments'>('courses');
+  const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
+  const [isStudentDialogOpen, setIsStudentDialogOpen] = useState(false);
   
   // Form states
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [difficulty, setDifficulty] = useState('beginner');
   const [category, setCategory] = useState('');
+  const [thumbnailUrl, setThumbnailUrl] = useState('');
   const [isPublished, setIsPublished] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -160,7 +169,7 @@ export default function AdminDashboard() {
     // Fetch students with enrollment counts
     const { data: studentsData } = await supabase
       .from('profiles')
-      .select('id, email, full_name, created_at')
+      .select('id, email, full_name, created_at, total_points, current_level')
       .order('created_at', { ascending: false });
 
     if (studentsData) {
@@ -175,6 +184,8 @@ export default function AdminDashboard() {
           return {
             ...student,
             enrollments_count: count || 0,
+            total_points: student.total_points,
+            current_level: student.current_level,
           };
         })
       );
@@ -239,6 +250,7 @@ export default function AdminDashboard() {
     setDescription('');
     setDifficulty('beginner');
     setCategory('');
+    setThumbnailUrl('');
     setIsPublished(false);
     setEditingCourse(null);
   };
@@ -249,6 +261,7 @@ export default function AdminDashboard() {
     setDescription(course.description || '');
     setDifficulty(course.difficulty);
     setCategory(course.category || '');
+    setThumbnailUrl(course.thumbnail_url || '');
     setIsPublished(course.is_published);
     setIsDialogOpen(true);
   };
@@ -274,6 +287,7 @@ export default function AdminDashboard() {
           description,
           difficulty: difficulty as 'beginner' | 'intermediate' | 'advanced',
           category,
+          thumbnail_url: thumbnailUrl || null,
           is_published: isPublished,
         })
         .eq('id', editingCourse.id);
@@ -300,6 +314,7 @@ export default function AdminDashboard() {
           description,
           difficulty: difficulty as 'beginner' | 'intermediate' | 'advanced',
           category,
+          thumbnail_url: thumbnailUrl || null,
           is_published: isPublished,
           created_by: user?.id,
         });
@@ -367,6 +382,28 @@ export default function AdminDashboard() {
   const handleSignOut = async () => {
     await signOut();
     navigate('/');
+  };
+
+  const handleDeleteStudent = async (studentId: string) => {
+    if (!confirm('Are you sure you want to remove this student? This will delete all their enrollments and progress.')) return;
+
+    // Delete student's enrollments first
+    await supabase.from('enrollments').delete().eq('user_id', studentId);
+    await supabase.from('lesson_progress').delete().eq('user_id', studentId);
+    await supabase.from('quiz_attempts').delete().eq('user_id', studentId);
+    await supabase.from('certificates').delete().eq('user_id', studentId);
+
+    toast({
+      title: 'Student data removed',
+      description: 'All student enrollments and progress have been deleted.',
+    });
+    fetchAdminData();
+    setIsStudentDialogOpen(false);
+  };
+
+  const viewStudentDetails = (student: Student) => {
+    setSelectedStudent(student);
+    setIsStudentDialogOpen(true);
   };
 
   if (loading || role !== 'admin') {
@@ -580,6 +617,23 @@ export default function AdminDashboard() {
                             />
                           </div>
                         </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="thumbnail">Thumbnail URL</Label>
+                          <div className="flex items-center gap-2">
+                            <Image className="w-5 h-5 text-muted-foreground" />
+                            <Input
+                              id="thumbnail"
+                              value={thumbnailUrl}
+                              onChange={(e) => setThumbnailUrl(e.target.value)}
+                              placeholder="https://example.com/image.jpg"
+                            />
+                          </div>
+                          {thumbnailUrl && (
+                            <div className="mt-2 rounded-lg overflow-hidden w-32 h-20">
+                              <img src={thumbnailUrl} alt="Thumbnail preview" className="w-full h-full object-cover" />
+                            </div>
+                          )}
+                        </div>
                         <div className="flex items-center justify-between">
                           <Label htmlFor="published">Publish Course</Label>
                           <Switch
@@ -613,9 +667,15 @@ export default function AdminDashboard() {
                     {courses.map((course) => (
                       <div key={course.id} className="flex items-center justify-between p-4 bg-muted/50 rounded-lg hover:bg-muted transition-colors">
                         <div className="flex items-center gap-4">
-                          <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center">
-                            <BookOpen className="w-6 h-6 text-primary" />
-                          </div>
+                          {course.thumbnail_url ? (
+                            <div className="w-16 h-12 rounded-lg overflow-hidden flex-shrink-0">
+                              <img src={course.thumbnail_url} alt={course.title} className="w-full h-full object-cover" />
+                            </div>
+                          ) : (
+                            <div className="w-16 h-12 rounded-lg bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center flex-shrink-0">
+                              <BookOpen className="w-6 h-6 text-primary" />
+                            </div>
+                          )}
                           <div>
                             <div className="flex items-center gap-2">
                               <h4 className="font-semibold">{course.title}</h4>
@@ -684,7 +744,9 @@ export default function AdminDashboard() {
                         <TableHead>Student</TableHead>
                         <TableHead>Email</TableHead>
                         <TableHead>Joined</TableHead>
-                        <TableHead className="text-right">Enrollments</TableHead>
+                        <TableHead>Level</TableHead>
+                        <TableHead>Enrollments</TableHead>
+                        <TableHead className="text-right">Actions</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -710,8 +772,23 @@ export default function AdminDashboard() {
                               {new Date(student.created_at).toLocaleDateString()}
                             </div>
                           </TableCell>
-                          <TableCell className="text-right">
+                          <TableCell>
+                            <Badge variant="outline" className={getDifficultyColor(student.current_level || 'beginner')}>
+                              {student.current_level || 'beginner'}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
                             <Badge variant="secondary">{student.enrollments_count} courses</Badge>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex items-center justify-end gap-1">
+                              <Button variant="ghost" size="icon" onClick={() => viewStudentDetails(student)}>
+                                <Eye className="w-4 h-4" />
+                              </Button>
+                              <Button variant="ghost" size="icon" onClick={() => handleDeleteStudent(student.id)}>
+                                <UserX className="w-4 h-4 text-destructive" />
+                              </Button>
+                            </div>
                           </TableCell>
                         </TableRow>
                       ))}
@@ -720,6 +797,56 @@ export default function AdminDashboard() {
                 )}
               </CardContent>
             </Card>
+
+            {/* Student Details Dialog */}
+            <Dialog open={isStudentDialogOpen} onOpenChange={setIsStudentDialogOpen}>
+              <DialogContent className="sm:max-w-[500px]">
+                <DialogHeader>
+                  <DialogTitle>Student Details</DialogTitle>
+                  <DialogDescription>View detailed information about this student</DialogDescription>
+                </DialogHeader>
+                {selectedStudent && (
+                  <div className="space-y-4 pt-4">
+                    <div className="flex items-center gap-4">
+                      <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
+                        <User className="w-8 h-8 text-primary" />
+                      </div>
+                      <div>
+                        <h3 className="text-xl font-semibold">{selectedStudent.full_name || 'No name'}</h3>
+                        <p className="text-muted-foreground">{selectedStudent.email}</p>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="p-4 bg-muted/50 rounded-lg">
+                        <p className="text-sm text-muted-foreground">Joined</p>
+                        <p className="font-semibold">{new Date(selectedStudent.created_at).toLocaleDateString()}</p>
+                      </div>
+                      <div className="p-4 bg-muted/50 rounded-lg">
+                        <p className="text-sm text-muted-foreground">Enrollments</p>
+                        <p className="font-semibold">{selectedStudent.enrollments_count} courses</p>
+                      </div>
+                      <div className="p-4 bg-muted/50 rounded-lg">
+                        <p className="text-sm text-muted-foreground">Current Level</p>
+                        <Badge variant="outline" className={getDifficultyColor(selectedStudent.current_level || 'beginner')}>
+                          {selectedStudent.current_level || 'beginner'}
+                        </Badge>
+                      </div>
+                      <div className="p-4 bg-muted/50 rounded-lg">
+                        <p className="text-sm text-muted-foreground">Total Points</p>
+                        <p className="font-semibold">{selectedStudent.total_points || 0} pts</p>
+                      </div>
+                    </div>
+                    <div className="flex justify-end gap-2 pt-4">
+                      <Button variant="outline" onClick={() => setIsStudentDialogOpen(false)}>Close</Button>
+                      <Button variant="destructive" onClick={() => handleDeleteStudent(selectedStudent.id)}>
+                        <UserX className="w-4 h-4 mr-2" />
+                        Remove Student Data
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </DialogContent>
+            </Dialog>
           </TabsContent>
 
           {/* Enrollments Tab */}
