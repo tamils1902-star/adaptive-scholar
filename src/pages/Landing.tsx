@@ -2,6 +2,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/lib/auth';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { ThemeToggle } from '@/components/ThemeToggle';
 import { 
   Brain, 
   Sparkles, 
@@ -69,6 +70,7 @@ export default function Landing() {
             <span className="text-xl font-display font-bold">AdaptLearn</span>
           </div>
           <div className="flex items-center gap-4">
+            <ThemeToggle />
             <Button variant="ghost" onClick={() => navigate('/auth')}>
               Login
             </Button>

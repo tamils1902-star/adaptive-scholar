@@ -6,7 +6,9 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
+import { ThemeToggle } from '@/components/ThemeToggle';
 import { 
   Brain, 
   ArrowLeft,
@@ -15,7 +17,8 @@ import {
   Trophy,
   Clock,
   RotateCcw,
-  ArrowRight
+  ArrowRight,
+  ListChecks
 } from 'lucide-react';
 import { Json } from '@/integrations/supabase/types';
 
@@ -51,14 +54,17 @@ export default function QuizView() {
   
   const [quiz, setQuiz] = useState<Quiz | null>(null);
   const [lesson, setLesson] = useState<Lesson | null>(null);
+  const [allQuestions, setAllQuestions] = useState<Question[]>([]);
   const [questions, setQuestions] = useState<Question[]>([]);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [selectedAnswers, setSelectedAnswers] = useState<Map<string, number>>(new Map());
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [score, setScore] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
-  const [startTime] = useState(Date.now());
+  const [startTime, setStartTime] = useState(Date.now());
   const [showExplanation, setShowExplanation] = useState(false);
+  const [quizStarted, setQuizStarted] = useState(false);
+  const [selectedQuestionCount, setSelectedQuestionCount] = useState<string>('all');
 
   useEffect(() => {
     if (!loading && !user) {
@@ -124,10 +130,26 @@ export default function QuizView() {
         points: q.points || 10,
         order_index: q.order_index || 0,
       }));
-      setQuestions(formattedQuestions);
+      setAllQuestions(formattedQuestions);
     }
 
     setIsLoading(false);
+  };
+
+  const startQuiz = () => {
+    let selectedQuestions = [...allQuestions];
+    
+    if (selectedQuestionCount !== 'all') {
+      const count = parseInt(selectedQuestionCount, 10);
+      // Shuffle and pick the selected number of questions
+      selectedQuestions = [...allQuestions]
+        .sort(() => Math.random() - 0.5)
+        .slice(0, Math.min(count, allQuestions.length));
+    }
+    
+    setQuestions(selectedQuestions);
+    setStartTime(Date.now());
+    setQuizStarted(true);
   };
 
   const parseOptions = (options: Json): string[] => {
@@ -239,6 +261,8 @@ export default function QuizView() {
     setScore(0);
     setCurrentQuestionIndex(0);
     setShowExplanation(false);
+    setQuizStarted(false);
+    setQuestions([]);
   };
 
   const getDifficultyColor = (difficulty: string) => {
@@ -262,7 +286,7 @@ export default function QuizView() {
     );
   }
 
-  if (!quiz || questions.length === 0) {
+  if (!quiz || allQuestions.length === 0) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <Card className="border-0 shadow-lg max-w-md">
@@ -271,6 +295,108 @@ export default function QuizView() {
             <Button onClick={() => navigate(-1)}>Go Back</Button>
           </CardContent>
         </Card>
+      </div>
+    );
+  }
+
+  // Get question count options
+  const getQuestionCountOptions = () => {
+    const total = allQuestions.length;
+    const options: { value: string; label: string }[] = [
+      { value: 'all', label: `All (${total} questions)` }
+    ];
+    
+    if (total >= 5) options.unshift({ value: '5', label: '5 questions' });
+    if (total >= 10) options.unshift({ value: '10', label: '10 questions' });
+    if (total >= 15) options.unshift({ value: '15', label: '15 questions' });
+    if (total >= 20) options.unshift({ value: '20', label: '20 questions' });
+    
+    return options.reverse();
+  };
+
+  // Quiz Setup View (before starting)
+  if (!quizStarted) {
+    return (
+      <div className="min-h-screen bg-background">
+        <header className="sticky top-0 z-50 bg-card/80 backdrop-blur-md border-b border-border">
+          <div className="container mx-auto px-4 py-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <Button variant="ghost" size="icon" onClick={() => navigate(`/lesson/${lesson?.id}`)}>
+                  <ArrowLeft className="w-5 h-5" />
+                </Button>
+                <div className="flex items-center gap-3">
+                  <div className="p-2 gradient-primary rounded-xl">
+                    <Brain className="w-6 h-6 text-primary-foreground" />
+                  </div>
+                  <span className="text-xl font-display font-bold">Quiz Setup</span>
+                </div>
+              </div>
+              <ThemeToggle />
+            </div>
+          </div>
+        </header>
+
+        <main className="container mx-auto px-4 py-8 max-w-lg">
+          <Card className="border-0 shadow-lg">
+            <CardHeader className="text-center">
+              <div className="w-16 h-16 mx-auto mb-4 gradient-primary rounded-2xl flex items-center justify-center">
+                <ListChecks className="w-8 h-8 text-primary-foreground" />
+              </div>
+              <CardTitle className="text-2xl">{quiz.title}</CardTitle>
+              <CardDescription>Configure your quiz before starting</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="flex justify-center gap-2">
+                <Badge variant="outline" className={getDifficultyColor(quiz.difficulty)}>
+                  {quiz.difficulty}
+                </Badge>
+                <Badge variant="outline">
+                  Passing: {quiz.passing_score}%
+                </Badge>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Number of Questions</label>
+                <Select value={selectedQuestionCount} onValueChange={setSelectedQuestionCount}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select number of questions" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {getQuestionCountOptions().map(option => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  Questions will be randomly selected from the available pool
+                </p>
+              </div>
+
+              <div className="bg-muted/50 rounded-lg p-4 space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Total Available</span>
+                  <span className="font-medium">{allQuestions.length} questions</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Selected</span>
+                  <span className="font-medium">
+                    {selectedQuestionCount === 'all' 
+                      ? allQuestions.length 
+                      : Math.min(parseInt(selectedQuestionCount), allQuestions.length)} questions
+                  </span>
+                </div>
+              </div>
+
+              <Button variant="gradient" className="w-full" size="lg" onClick={startQuiz}>
+                Start Quiz
+                <ArrowRight className="w-5 h-5 ml-2" />
+              </Button>
+            </CardContent>
+          </Card>
+        </main>
       </div>
     );
   }
@@ -285,16 +411,19 @@ export default function QuizView() {
       <div className="min-h-screen bg-background">
         <header className="sticky top-0 z-50 bg-card/80 backdrop-blur-md border-b border-border">
           <div className="container mx-auto px-4 py-4">
-            <div className="flex items-center gap-4">
-              <Button variant="ghost" size="icon" onClick={() => navigate(`/lesson/${lesson?.id}`)}>
-                <ArrowLeft className="w-5 h-5" />
-              </Button>
-              <div className="flex items-center gap-3">
-                <div className="p-2 gradient-primary rounded-xl">
-                  <Brain className="w-6 h-6 text-primary-foreground" />
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <Button variant="ghost" size="icon" onClick={() => navigate(`/lesson/${lesson?.id}`)}>
+                  <ArrowLeft className="w-5 h-5" />
+                </Button>
+                <div className="flex items-center gap-3">
+                  <div className="p-2 gradient-primary rounded-xl">
+                    <Brain className="w-6 h-6 text-primary-foreground" />
+                  </div>
+                  <span className="text-xl font-display font-bold">Quiz Results</span>
                 </div>
-                <span className="text-xl font-display font-bold">Quiz Results</span>
               </div>
+              <ThemeToggle />
             </div>
           </div>
         </header>
@@ -409,9 +538,12 @@ export default function QuizView() {
               </div>
             </div>
             
-            <Badge variant="outline" className={getDifficultyColor(quiz.difficulty)}>
-              {quiz.difficulty}
-            </Badge>
+            <div className="flex items-center gap-2">
+              <Badge variant="outline" className={getDifficultyColor(quiz.difficulty)}>
+                {quiz.difficulty}
+              </Badge>
+              <ThemeToggle />
+            </div>
           </div>
           
           <div className="mt-4">
