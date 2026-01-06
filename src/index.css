@@ -144,6 +144,14 @@
     background: var(--gradient-primary);
   }
   
+  .gradient-text {
+    background: var(--gradient-primary);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+  }
+  
   .gradient-accent {
     background: var(--gradient-accent);
   }

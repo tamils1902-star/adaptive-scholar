@@ -95,7 +95,7 @@ export default function Landing() {
             
             <h1 className="text-4xl md:text-6xl font-display font-bold mb-6 leading-tight animate-fade-in" style={{ animationDelay: '0.1s' }}>
               Learn Smarter with
-              <span className="block gradient-primary bg-clip-text text-transparent">Adaptive AI</span>
+              <span className="block gradient-text">Adaptive AI</span>
             </h1>
             
             <p className="text-lg md:text-xl text-muted-foreground mb-8 animate-fade-in" style={{ animationDelay: '0.2s' }}>
