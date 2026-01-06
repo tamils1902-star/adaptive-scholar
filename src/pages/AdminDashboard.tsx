@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
+import { ThemeToggle } from '@/components/ThemeToggle';
 import { 
   Brain, 
   BookOpen, 
@@ -454,6 +455,7 @@ export default function AdminDashboard() {
                 <span className="text-sm font-medium">{adminProfile.full_name || adminProfile.email}</span>
               </div>
             )}
+            <ThemeToggle />
             <Button variant="outline" onClick={() => navigate('/admin/analytics')}>
               <BarChart3 className="w-4 h-4 mr-2" />
               Analytics

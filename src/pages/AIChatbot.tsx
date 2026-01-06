@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ThemeToggle } from '@/components/ThemeToggle';
 import { 
   Brain, 
   ArrowLeft, 
@@ -262,6 +263,7 @@ export default function AIChatbot() {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <ThemeToggle />
             <Button variant="outline" size="sm" onClick={analyzeConversation} disabled={isAnalyzing || messages.length < 3}>
               <BarChart3 className="w-4 h-4 mr-2" />
               Analyze Learning

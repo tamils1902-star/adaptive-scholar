@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
+import { ThemeToggle } from '@/components/ThemeToggle';
 import { 
   Brain, 
   BookOpen, 
@@ -164,6 +165,7 @@ export default function Courses() {
               <span className="text-xl font-display font-bold">AdaptLearn</span>
             </div>
           </div>
+          <ThemeToggle />
         </div>
       </header>
 

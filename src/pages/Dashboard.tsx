@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
+import { ThemeToggle } from '@/components/ThemeToggle';
 import { 
   Brain, 
   BookOpen, 
@@ -245,6 +246,7 @@ export default function Dashboard() {
                 Admin Panel
               </Button>
             )}
+            <ThemeToggle />
             <div 
               className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity"
               onClick={() => navigate('/profile')}

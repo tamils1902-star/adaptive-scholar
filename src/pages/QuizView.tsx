@@ -18,7 +18,9 @@ import {
   Clock,
   RotateCcw,
   ArrowRight,
-  ListChecks
+  ListChecks,
+  Timer,
+  AlertTriangle
 } from 'lucide-react';
 import { Json } from '@/integrations/supabase/types';
 
@@ -65,6 +67,10 @@ export default function QuizView() {
   const [showExplanation, setShowExplanation] = useState(false);
   const [quizStarted, setQuizStarted] = useState(false);
   const [selectedQuestionCount, setSelectedQuestionCount] = useState<string>('all');
+  const [timerEnabled, setTimerEnabled] = useState(false);
+  const [timerMinutes, setTimerMinutes] = useState<string>('10');
+  const [timeRemaining, setTimeRemaining] = useState<number | null>(null);
+  const [timerExpired, setTimerExpired] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -77,6 +83,32 @@ export default function QuizView() {
       fetchQuizData();
     }
   }, [user, quizId]);
+
+  // Timer countdown effect
+  useEffect(() => {
+    if (!quizStarted || !timerEnabled || timeRemaining === null || isSubmitted) return;
+
+    if (timeRemaining <= 0) {
+      setTimerExpired(true);
+      handleSubmitQuiz();
+      return;
+    }
+
+    const interval = setInterval(() => {
+      setTimeRemaining(prev => {
+        if (prev === null || prev <= 0) return 0;
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [quizStarted, timerEnabled, timeRemaining, isSubmitted]);
+
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
 
   const fetchQuizData = async () => {
     if (!user || !quizId) return;
@@ -149,6 +181,12 @@ export default function QuizView() {
     
     setQuestions(selectedQuestions);
     setStartTime(Date.now());
+    
+    // Initialize timer if enabled
+    if (timerEnabled) {
+      setTimeRemaining(parseInt(timerMinutes, 10) * 60);
+    }
+    
     setQuizStarted(true);
   };
 
@@ -263,6 +301,8 @@ export default function QuizView() {
     setShowExplanation(false);
     setQuizStarted(false);
     setQuestions([]);
+    setTimeRemaining(null);
+    setTimerExpired(false);
   };
 
   const getDifficultyColor = (difficulty: string) => {
@@ -388,6 +428,43 @@ export default function QuizView() {
                       : Math.min(parseInt(selectedQuestionCount), allQuestions.length)} questions
                   </span>
                 </div>
+              </div>
+
+              {/* Timer Settings */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <label className="text-sm font-medium flex items-center gap-2">
+                    <Timer className="w-4 h-4" />
+                    Enable Timer
+                  </label>
+                  <Button
+                    variant={timerEnabled ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setTimerEnabled(!timerEnabled)}
+                  >
+                    {timerEnabled ? 'ON' : 'OFF'}
+                  </Button>
+                </div>
+                
+                {timerEnabled && (
+                  <div className="space-y-2">
+                    <label className="text-sm text-muted-foreground">Time Limit</label>
+                    <Select value={timerMinutes} onValueChange={setTimerMinutes}>
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Select time limit" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="5">5 minutes</SelectItem>
+                        <SelectItem value="10">10 minutes</SelectItem>
+                        <SelectItem value="15">15 minutes</SelectItem>
+                        <SelectItem value="20">20 minutes</SelectItem>
+                        <SelectItem value="30">30 minutes</SelectItem>
+                        <SelectItem value="45">45 minutes</SelectItem>
+                        <SelectItem value="60">60 minutes</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
               </div>
 
               <Button variant="gradient" className="w-full" size="lg" onClick={startQuiz}>
@@ -538,7 +615,19 @@ export default function QuizView() {
               </div>
             </div>
             
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3">
+              {timerEnabled && timeRemaining !== null && (
+                <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg font-mono text-sm font-medium ${
+                  timeRemaining <= 60 
+                    ? 'bg-destructive/10 text-destructive animate-pulse' 
+                    : timeRemaining <= 300 
+                      ? 'bg-warning/10 text-warning' 
+                      : 'bg-muted text-foreground'
+                }`}>
+                  <Timer className="w-4 h-4" />
+                  {formatTime(timeRemaining)}
+                </div>
+              )}
               <Badge variant="outline" className={getDifficultyColor(quiz.difficulty)}>
                 {quiz.difficulty}
               </Badge>
