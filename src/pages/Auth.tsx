@@ -49,9 +49,24 @@ export default function Auth() {
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   
-  const { signIn, signUp, user, role, resetPassword, updatePassword } = useAuth();
+  const { signIn, signUp, signOut, user, role, resetPassword, updatePassword } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  // Clear any stale sessions on mount to prevent refresh token errors
+  useEffect(() => {
+    const clearStaleSession = async () => {
+      // Only clear if there's no valid user but there might be stale tokens
+      if (!user && !isPasswordReset) {
+        try {
+          await signOut();
+        } catch (e) {
+          // Ignore errors during cleanup
+        }
+      }
+    };
+    clearStaleSession();
+  }, []);
 
   useEffect(() => {
     if (user && !isPasswordReset) {
